@@ -5,6 +5,7 @@ import BoxPlot from "./components/BoxPlot";
 import MeetingsProductivityChart from "./components/MeetingsProductivityChart";
 import { loadAndCleanCSV } from "./utils/dataParser";
 import "./components/chartStyles.css";
+import HoursStressHeatmap from "./components/CorrelationHeatmap";
 
 function App() {
   const [data, setData] = useState([]);
@@ -20,7 +21,8 @@ function App() {
     { id: "pie", label: "Stress Level Pie" },
     { id: "bar", label: "Sector-Stress Bar" },
     { id: "box", label: "Hours Worked Box" },
-    { id: "meetings", label: "Meetings vs Productivity" }
+    { id: "meetings", label: "Meetings vs Productivity" },
+    { id: "heatmap", label: "heatmap" }
   ];
 
   return (
@@ -55,6 +57,7 @@ function App() {
           {tab === "bar" && <SectorBarChart data={data} />}
           {tab === "box" && <BoxPlot data={data} />}
           {tab === "meetings" && <MeetingsProductivityChart data={data} />}
+          {tab == "heatmap" && <HoursStressHeatmap data={data} />}
         </div>
       )}
     </div>

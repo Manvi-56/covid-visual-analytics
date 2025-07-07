@@ -1,66 +1,156 @@
-import React, { useEffect, useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import * as d3 from "d3";
 
 const SectorBarChart = ({ data }) => {
   const svgRef = useRef();
+  const tooltipRef = useRef();
 
   useEffect(() => {
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
-    const width = 500, height = 300, margin = { top: 20, right: 20, bottom: 50, left: 50 };
-    const stressLevels = ["Low", "Medium", "High"];
-    const sectors = Array.from(new Set(data.map(d => d.Sector)));
+    const margin = { top: 40, right: 150, bottom: 60, left: 60 };
+    const width = 800 - margin.left - margin.right;
+    const height = 450 - margin.top - margin.bottom;
 
-    const nested = d3.rollup(
+    const stressLevels = ["Low", "Medium", "High"];
+    const colorMap = {
+      "Low": "#1f77b4",
+      "Medium": "#ff7f0e",
+      "High": "#2ca02c"
+    };
+
+    const tooltip = d3.select(tooltipRef.current)
+      .style("position", "absolute")
+      .style("background", "#fff")
+      .style("padding", "8px 12px")
+      .style("border", "1px solid #ccc")
+      .style("border-radius", "4px")
+      .style("pointer-events", "none")
+      .style("box-shadow", "0 2px 5px rgba(0,0,0,0.2)")
+      .style("display", "none");
+
+    const grouped = d3.rollups(
       data,
-      v => d3.rollup(v, g => g.length, d => d.Stress_Level),
-      d => d.Sector
+      v => v.length,
+      d => d.Sector,
+      d => d.Stress_Level
     );
 
-    const stackData = sectors.map(sector => {
-      const values = nested.get(sector) || new Map();
-      return {
-        sector,
-        Low: values.get("Low") || 0,
-        Medium: values.get("Medium") || 0,
-        High: values.get("High") || 0
-      };
+    const processed = grouped.map(([sector, stressGroups]) => {
+      const obj = { Sector: sector };
+      stressGroups.forEach(([stress, count]) => {
+        obj[stress] = count;
+      });
+      return obj;
     });
 
-    const x = d3.scaleBand().domain(sectors).range([margin.left, width - margin.right]).padding(0.3);
-    const y = d3.scaleLinear().domain([0, d3.max(stackData, d => d.Low + d.Medium + d.High)]).nice().range([height - margin.bottom, margin.top]);
-    const color = d3.scaleOrdinal().domain(stressLevels).range(d3.schemeSet2);
+    const allSectors = processed.map(d => d.Sector);
 
-    const group = svg.attr("width", width).attr("height", height)
-      .append("g");
+    const x0 = d3.scaleBand().domain(allSectors).range([0, width]).padding(0.2);
+    const x1 = d3.scaleBand().domain(stressLevels).range([0, x0.bandwidth()]).padding(0.1);
 
-    group.append("g")
-      .attr("transform", `translate(0,${height - margin.bottom})`)
-      .call(d3.axisBottom(x));
+    const y = d3.scaleLinear()
+      .domain([0, d3.max(processed, d => Math.max(...stressLevels.map(k => d[k] || 0))) + 50])
+      .range([height, 0]);
 
-    group.append("g")
-      .attr("transform", `translate(${margin.left},0)`)
-      .call(d3.axisLeft(y));
+    const g = svg
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    const stack = d3.stack().keys(stressLevels);
-    const series = stack(stackData);
+    // X Axis
+    g.append("g")
+      .attr("transform", `translate(0,${height})`)
+      .call(d3.axisBottom(x0));
 
-    group.selectAll("g.layer")
-      .data(series)
-      .join("g")
-      .attr("fill", d => color(d.key))
-      .selectAll("rect")
-      .data(d => d)
-      .join("rect")
-      .attr("x", d => x(d.data.sector))
-      .attr("y", d => y(d[1]))
-      .attr("height", d => y(d[0]) - y(d[1]))
-      .attr("width", x.bandwidth());
+    // Y Axis with grid lines
+    g.append("g")
+      .call(d3.axisLeft(y).ticks(10))
+      .call(g => g.selectAll(".tick line")
+        .attr("x2", width)
+        .attr("stroke", "#ccc")
+        .attr("stroke-dasharray", "2,2"))
+      .call(g => g.select(".domain").remove());
+
+    // Bar groups
+    const sectorGroups = g.selectAll("g.sector")
+      .data(processed)
+      .enter()
+      .append("g")
+      .attr("class", "sector")
+      .attr("transform", d => `translate(${x0(d.Sector)},0)`);
+
+    sectorGroups.selectAll("rect")
+      .data(d => stressLevels.map(stress => ({
+        stress,
+        value: d[stress] || 0,
+        sector: d.Sector
+      })))
+      .enter()
+      .append("rect")
+      .attr("x", d => x1(d.stress))
+      .attr("y", d => y(d.value))
+      .attr("width", x1.bandwidth())
+      .attr("height", d => height - y(d.value))
+      .attr("fill", d => colorMap[d.stress])
+      .on("mouseover", function (event, d) {
+        const filtered = data.filter(
+          row => row.Sector === d.sector && row.Stress_Level === d.stress
+        );
+
+        const avgProd = (d3.mean(filtered, d => +d.Productivity_Change) || 0).toFixed(2);
+        const avgHours = (d3.mean(filtered, d => +d.Hours_Worked_Per_Day) || 0).toFixed(2);
+        const healthRate = ((d3.mean(filtered, d => +d.Health_Issue) || 0) * 100).toFixed(1);
+
+        tooltip
+          .style("display", "block")
+          .html(
+            `<strong>Sector:</strong> ${d.sector}<br/>` +
+            `<strong>Stress:</strong> ${d.stress}<br/>` +
+            `<strong>Count:</strong> ${d.value}<br/>` +
+            `<strong>Avg Productivity:</strong> ${avgProd}<br/>` +
+            `<strong>Avg Hours Worked:</strong> ${avgHours}<br/>` +
+            `<strong>Health Issue %:</strong> ${healthRate}%`
+          );
+        d3.select(this).attr("opacity", 0.7);
+      })
+      .on("mousemove", event => {
+        tooltip
+          .style("left", event.pageX + 10 + "px")
+          .style("top", event.pageY + 10 + "px");
+      })
+      .on("mouseout", function () {
+        tooltip.style("display", "none");
+        d3.select(this).attr("opacity", 1);
+      });
+
+    // Legend
+    const legend = svg.append("g").attr("transform", `translate(${width + 70}, 40)`);
+    stressLevels.forEach((key, i) => {
+      legend.append("rect")
+        .attr("x", 0)
+        .attr("y", i * 22)
+        .attr("width", 15)
+        .attr("height", 15)
+        .attr("fill", colorMap[key]);
+
+      legend.append("text")
+        .attr("x", 20)
+        .attr("y", i * 22 + 12)
+        .text(key)
+        .style("font-size", "13px");
+    });
 
   }, [data]);
 
-  return <svg ref={svgRef}></svg>;
+  return (
+    <>
+      <svg ref={svgRef}></svg>
+      <div ref={tooltipRef}></div>
+    </>
+  );
 };
 
 export default SectorBarChart;
