@@ -44,7 +44,7 @@ function App() {
 
   return (
     <div style={{ padding: "20px", fontFamily: "Arial" }}>
-      <h1>COVID-19 Impact on Working Professionals</h1>
+      <h1>COVID-19 Data Visualization and Analysis</h1>
 
       {/* Tabs */}
       <div style={{ marginBottom: 20 }}>
