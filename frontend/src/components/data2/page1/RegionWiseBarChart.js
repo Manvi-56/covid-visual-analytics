@@ -1,15 +1,17 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect } from "react";
 import * as d3 from "d3";
 
 const GroupedBarChart = ({ data }) => {
   const svgRef = useRef();
   const tooltipRef = useRef();
 
-  const margin = { top: 60, right: 30, bottom: 80, left: 70 },
+  const margin = { top: 60, right: 150, bottom: 80, left: 70 },
     width = 800 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom;
 
   useEffect(() => {
+    if (!data || data.length === 0) return;
+
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
@@ -19,36 +21,34 @@ const GroupedBarChart = ({ data }) => {
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    // Normalize WHO Region names
-   // Normalize WHO Region names (handles all known region variations)
-const normalizeRegion = (region) => {
-  if (!region || typeof region !== "string") return "Other"; // Safe fallback
-  const trimmed = region.trim();
-  const map = {
-    "EasternMediterranean": "Eastern Mediterranean",
-    "Eastern Mediterranean": "Eastern Mediterranean",
-    "South-EastAsia": "South-East Asia",
-    "South-East Asia": "South-East Asia",
-    "WesternPacific": "Western Pacific",
-    "Western Pacific": "Western Pacific",
-    "Europe": "Europe",
-    "Africa": "Africa",
-    "Americas": "Americas"
-  };
-  return map[trimmed] || "Other";
-};
-
-
+    const normalizeRegion = (region) => {
+      if (!region || typeof region !== "string") return "Other";
+      const trimmed = region.trim();
+      const map = {
+        "EasternMediterranean": "Eastern Mediterranean",
+        "Eastern Mediterranean": "Eastern Mediterranean",
+        "South-EastAsia": "South-East Asia",
+        "South-East Asia": "South-East Asia",
+        "WesternPacific": "Western Pacific",
+        "Western Pacific": "Western Pacific",
+        "Europe": "Europe",
+        "Africa": "Africa",
+        "Americas": "Americas"
+      };
+      return map[trimmed] || "Other";
+    };
 
     const cleanedData = data.map(d => ({
-      region: normalizeRegion(d["WHO Region"]),
-      cases: +d.TotalCases,
-      deaths: +d.TotalDeaths,
-      recovered: +d.TotalRecovered
+      region: normalizeRegion(d.WHORegion),
+      cases: d.TotalCases,
+      deaths: d.TotalDeaths,
+      recovered: d.TotalRecovered
     }));
 
+    const filtered = cleanedData.filter(d => d.region !== "Other");
+
     const grouped = d3.rollups(
-      cleanedData,
+      filtered,
       v => ({
         cases: d3.sum(v, d => d.cases),
         deaths: d3.sum(v, d => d.deaths),
@@ -57,7 +57,7 @@ const normalizeRegion = (region) => {
       d => d.region
     );
 
-    const regions = grouped.map(([key]) => key);
+    const regions = grouped.map(([region]) => region);
     const subgroups = ["cases", "deaths", "recovered"];
 
     const x0 = d3.scaleBand().domain(regions).range([0, width]).padding(0.2);
@@ -68,7 +68,7 @@ const normalizeRegion = (region) => {
 
     const color = d3.scaleOrdinal()
       .domain(subgroups)
-      .range(["#1f77b4", "#d62728", "#2ca02c"]);
+      .range(["#0B1D51", "#ED3500", "#B13BFF"]);
 
     // Axes
     g.append("g")
@@ -76,7 +76,8 @@ const normalizeRegion = (region) => {
       .call(d3.axisBottom(x0))
       .selectAll("text")
       .attr("transform", "rotate(-30)")
-      .style("text-anchor", "end");
+      .style("text-anchor", "end")
+      .style("font-size", "12px");
 
     g.append("g").call(d3.axisLeft(y));
 
@@ -87,9 +88,11 @@ const normalizeRegion = (region) => {
       .style("background", "#fff")
       .style("border", "1px solid #ccc")
       .style("border-radius", "4px")
+      .style("pointer-events", "none")
       .style("display", "none");
 
-    const bars = g.selectAll("g.bar-group")
+    // Bars
+    const bars = g.selectAll(".bar-group")
       .data(grouped)
       .enter()
       .append("g")
@@ -111,7 +114,9 @@ const normalizeRegion = (region) => {
         d3.select(event.currentTarget).attr("opacity", 0.7);
       })
       .on("mousemove", event => {
-        tooltip.style("left", event.pageX + 10 + "px").style("top", event.pageY - 20 + "px");
+        tooltip
+          .style("left", event.pageX + 10 + "px")
+          .style("top", event.pageY - 30 + "px");
       })
       .on("mouseout", event => {
         tooltip.style("display", "none");
@@ -136,9 +141,27 @@ const normalizeRegion = (region) => {
     svg.append("text")
       .attr("transform", "rotate(-90)")
       .attr("x", -height / 2 - margin.top)
-      .attr("y", 20)
+      .attr("y", 13)
       .attr("text-anchor", "middle")
       .text("Count");
+
+    // Legend
+  const legend = svg.append("g")
+  .attr("transform", `translate(${width + margin.left - 130}, ${margin.top + 30})`);
+
+
+    subgroups.forEach((key, i) => {
+      const group = legend.append("g").attr("transform", `translate(0, ${i * 25})`);
+      group.append("rect")
+        .attr("width", 18)
+        .attr("height", 18)
+        .attr("fill", color(key));
+      group.append("text")
+        .attr("x", 24)
+        .attr("y", 13)
+        .style("font-size", "13px")
+        .text(key.charAt(0).toUpperCase() + key.slice(1));
+    });
 
   }, [data]);
 

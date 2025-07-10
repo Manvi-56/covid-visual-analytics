@@ -130,6 +130,7 @@ const CovidScatterPlot = ({ data }) => {
 
   return (
     <div>
+      <div>
       <label>
         Filter by Continent:
         <select value={continentFilter} onChange={e => setContinentFilter(e.target.value)}>
@@ -139,6 +140,7 @@ const CovidScatterPlot = ({ data }) => {
           ))}
         </select>
       </label>
+      </div>
       <svg ref={svgRef}></svg>
       <div ref={tooltipRef}></div>
       <div style={{ marginTop: "12px", fontStyle: "italic" }}>{insight}</div>

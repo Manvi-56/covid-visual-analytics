@@ -8,38 +8,39 @@ import "./components/chartStyles.css";
 import HoursStressHeatmap from "./components/CorrelationHeatmap";
 import TestsVsCasesScatter from "./components/TestVsScatter";
 import loadAndCleanCSV2 from "./utils/data2Parser";
-import RegionWiseBarChart from "./components/RegionWiseBarChart";
+import RegionWiseBarChart from "./components/data2/page1/RegionWiseBarChart";
 import Page from "./components/data2/page1/Page";
+import CasesVsPopulationScatter from "./components/CasePopulationScatter";
+import MortalityRecoveryScatter from "./components/Scatter";
 
 function App() {
   const [data, setData] = useState([]);
   const [data2, setData2] = useState([]);
-  const [tab, setTab] = useState("pie");
+  const [tab, setTab] = useState("page1");
 
   useEffect(() => {
     loadAndCleanCSV("/cleaned_data.csv")
-      .then(parsed => setData(parsed))
-      .catch(err => console.error("Error loading data:", err));
+      .then((parsed) => setData(parsed))
+      .catch((err) => console.error("Error loading data:", err));
   }, []);
 
-  useEffect(() =>{
-      loadAndCleanCSV2("/worldometer_data.csv")
-      .then(parsed => setData2(parsed))
-      .catch(err => console.error("Error loading data2:", err));
+  useEffect(() => {
+    loadAndCleanCSV2("/worldometer_data.csv")
+      .then((parsed) => setData2(parsed))
+      .catch((err) => console.error("Error loading data2:", err));
   }, []);
 
   const tabs = [
-     { id: "page1", label: "page1" },
+    { id: "page1", label: "page1" },
+        { id: "scatter", label: "scatter" },
+    { id: "sc", label: "sc" },
+    { id: "sc2", label: "sc2" },
+    { id: "heatmap", label: "heatmap" },
     { id: "pie", label: "Stress Level Pie" },
     { id: "bar", label: "Sector-Stress Bar" },
     { id: "box", label: "Hours Worked Box" },
     { id: "meetings", label: "Meetings vs Productivity" },
-    { id: "heatmap", label: "heatmap" },
-    { id: "scatter", label: "scatter" },
-    { id: "region", label: "region" },
-   
   ];
-
 
   return (
     <div style={{ padding: "20px", fontFamily: "Arial" }}>
@@ -47,7 +48,7 @@ function App() {
 
       {/* Tabs */}
       <div style={{ marginBottom: 20 }}>
-        {tabs.map(t => (
+        {tabs.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
@@ -58,7 +59,7 @@ function App() {
               color: tab === t.id ? "white" : "black",
               border: "none",
               borderRadius: "4px",
-              cursor: "pointer"
+              cursor: "pointer",
             }}
           >
             {t.label}
@@ -74,9 +75,10 @@ function App() {
           {tab === "box" && <BoxPlot data={data} />}
           {tab === "meetings" && <MeetingsProductivityChart data={data} />}
           {tab == "heatmap" && <HoursStressHeatmap data={data} />}
-          {tab == "scatter" && <TestsVsCasesScatter data = {data2} />}
-          {tab == "region" && <RegionWiseBarChart data = {data2} />}
-          {tab == "page1" && <Page data = {data2} />}
+          {tab == "scatter" && <TestsVsCasesScatter data={data2} />}
+          {tab == "page1" && <Page data={data2} />}
+          {tab == "sc" && <CasesVsPopulationScatter data={data2} />}
+          {tab == "sc2" && <MortalityRecoveryScatter data={data2} />}
         </div>
       )}
     </div>

@@ -69,7 +69,7 @@ const TestsPerMillionLineChart = ({ data }) => {
       .attr("y", x.bandwidth() / 2)
       .attr("dy", ".35em")
       .style("text-anchor", "end")
-      .style("font-size", "8px");
+      .style("font-size", "10px");
 
     // Lines and circles
     g.selectAll("line.spike")

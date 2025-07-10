@@ -2,6 +2,7 @@ import React from "react";
 import TestsPerMillionLineChart from "./TestLineChart";
 import "./page.css";
 import DeathsPieChart from "./PieChart";
+import GroupedBarChart from "./RegionWiseBarChart";
 
 function Page({ data }) {
   return (
@@ -11,7 +12,7 @@ function Page({ data }) {
           <DeathsPieChart data={data} />
         </div>
         <div className="page1-other-graph">
-
+             <GroupedBarChart data={data}/>
         </div>
       </div>
 
