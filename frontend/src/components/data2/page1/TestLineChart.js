@@ -130,6 +130,7 @@ const TestsPerMillionLineChart = ({ data }) => {
 
   return (
     <div>
+      <div className="filter-pie">
       <label htmlFor="continent-select">Filter by Continent: </label>
       <select
         id="continent-select"
@@ -142,6 +143,7 @@ const TestsPerMillionLineChart = ({ data }) => {
           <option key={c} value={c}>{c}</option>
         ))}
       </select>
+      </div>
       <svg ref={svgRef}></svg>
       <div ref={tooltipRef}></div>
     </div>

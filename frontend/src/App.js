@@ -9,7 +9,7 @@ import HoursStressHeatmap from "./components/CorrelationHeatmap";
 import TestsVsCasesScatter from "./components/TestVsScatter";
 import loadAndCleanCSV2 from "./utils/data2Parser";
 import RegionWiseBarChart from "./components/RegionWiseBarChart";
-import TestsPerMillionLineChart from "./components/TestLineChart";
+import Page from "./components/data2/page1/Page";
 
 function App() {
   const [data, setData] = useState([]);
@@ -29,6 +29,7 @@ function App() {
   }, []);
 
   const tabs = [
+     { id: "page1", label: "page1" },
     { id: "pie", label: "Stress Level Pie" },
     { id: "bar", label: "Sector-Stress Bar" },
     { id: "box", label: "Hours Worked Box" },
@@ -36,7 +37,7 @@ function App() {
     { id: "heatmap", label: "heatmap" },
     { id: "scatter", label: "scatter" },
     { id: "region", label: "region" },
-    { id: "line", label: "line" },
+   
   ];
 
 
@@ -75,7 +76,7 @@ function App() {
           {tab == "heatmap" && <HoursStressHeatmap data={data} />}
           {tab == "scatter" && <TestsVsCasesScatter data = {data2} />}
           {tab == "region" && <RegionWiseBarChart data = {data2} />}
-          {tab == "line" && <TestsPerMillionLineChart data = {data2} />}
+          {tab == "page1" && <Page data = {data2} />}
         </div>
       )}
     </div>

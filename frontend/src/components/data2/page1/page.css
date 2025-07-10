@@ -1,0 +1,35 @@
+
+.test-line-graph{
+    padding: 20px;
+    border-top: 1px solid blue;
+}
+.region-pie-chart{
+    background-color: aliceblue;
+    width: 45%;
+    padding: 20px;
+    border-right: 1px solid blue;
+}
+.filter-pie{
+    width: 45%;
+}
+.filter-pie select{
+    border: none;
+    outline: none;
+   border: 1px solid blue;
+    padding: 6px;
+    border-radius: 5px;
+    text-align: center;
+}
+.filter-pie option{
+    
+}
+.image-pie{
+    margin-left: 200px;
+}
+.page1-box{
+    background-color:aliceblue;
+}
+.page1-up-box{
+    display: flex;
+    gap: 10px;
+}
