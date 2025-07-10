@@ -6,9 +6,14 @@ import MeetingsProductivityChart from "./components/MeetingsProductivityChart";
 import { loadAndCleanCSV } from "./utils/dataParser";
 import "./components/chartStyles.css";
 import HoursStressHeatmap from "./components/CorrelationHeatmap";
+import TestsVsCasesScatter from "./components/TestVsScatter";
+import loadAndCleanCSV2 from "./utils/data2Parser";
+import RegionWiseBarChart from "./components/RegionWiseBarChart";
+import TestsPerMillionLineChart from "./components/TestLineChart";
 
 function App() {
   const [data, setData] = useState([]);
+  const [data2, setData2] = useState([]);
   const [tab, setTab] = useState("pie");
 
   useEffect(() => {
@@ -17,13 +22,23 @@ function App() {
       .catch(err => console.error("Error loading data:", err));
   }, []);
 
+  useEffect(() =>{
+      loadAndCleanCSV2("/worldometer_data.csv")
+      .then(parsed => setData2(parsed))
+      .catch(err => console.error("Error loading data2:", err));
+  }, []);
+
   const tabs = [
     { id: "pie", label: "Stress Level Pie" },
     { id: "bar", label: "Sector-Stress Bar" },
     { id: "box", label: "Hours Worked Box" },
     { id: "meetings", label: "Meetings vs Productivity" },
-    { id: "heatmap", label: "heatmap" }
+    { id: "heatmap", label: "heatmap" },
+    { id: "scatter", label: "scatter" },
+    { id: "region", label: "region" },
+    { id: "line", label: "line" },
   ];
+
 
   return (
     <div style={{ padding: "20px", fontFamily: "Arial" }}>
@@ -58,6 +73,9 @@ function App() {
           {tab === "box" && <BoxPlot data={data} />}
           {tab === "meetings" && <MeetingsProductivityChart data={data} />}
           {tab == "heatmap" && <HoursStressHeatmap data={data} />}
+          {tab == "scatter" && <TestsVsCasesScatter data = {data2} />}
+          {tab == "region" && <RegionWiseBarChart data = {data2} />}
+          {tab == "line" && <TestsPerMillionLineChart data = {data2} />}
         </div>
       )}
     </div>
