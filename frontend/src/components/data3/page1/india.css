@@ -1,0 +1,12 @@
+
+.filter-india{
+    /* background-color: aqua; */
+}
+.filter-india select{
+    border: none;
+    outline: none;
+    border: 1px solid blue;
+    font-size: 16px;
+    padding: 6px;
+    border-radius: 5px;
+}
