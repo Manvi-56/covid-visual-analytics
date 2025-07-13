@@ -1,171 +1,243 @@
 // src/components/data2/page1/PieChart.js
-import React, { useEffect, useRef, useState } from "react";
-import * as d3 from "d3";
+import React, { useEffect, useRef } from 'react';
+import * as d3 from 'd3';
 
-const ContinentPieChart = ({ data }) => {
-    const svgRef = useRef();
-    const tooltipRef = useRef();
-    const containerRef = useRef(); // Ref for the parent container to get its width
-    const [metric, setMetric] = useState("TotalDeaths");
+const PieChart = ({ data, isModal = false }) => {
+  const svgRef = useRef();
+  const containerRef = useRef();
 
-    // Define custom colors for pie slices, aligned with your Tailwind theme
-    const pieColors = d3.scaleOrdinal()
-        .domain(["Asia", "Europe", "Africa", "North America", "South America", "Oceania"])
-        .range([
-            "#3B82F6", // covid-blue
-            "#EF4444", // covid-red
-            "#10B981", // covid-green
-            "#8B5CF6", // purple-500
-            "#EC4899", // pink-500
-            "#F59E0B"  // amber-500
-        ]);
+  const parseValue = (value) => {
+    if (typeof value === 'string') {
+      return parseFloat(value.replace(/,/g, '')) || 0;
+    }
+    return value || 0;
+  };
 
-    // Main drawing function
-    const drawChart = () => {
-        if (!data || data.length === 0 || !containerRef.current) {
-            // console.log("PieChart: Data not loaded or container not ready."); // Debugging
-            return;
-        }
+  useEffect(() => {
+    if (!data || data.length === 0) return;
 
-        const containerWidth = containerRef.current.clientWidth;
-        // Set a reasonable dynamic width and height for the SVG
-        const width = Math.max(containerWidth, 300); // Minimum width of 300px
-        const height = Math.min(width, 300); // Keep it square or slightly flexible
-        const radius = Math.min(width, height) / 2;
+    const svg = d3.select(svgRef.current);
+    svg.selectAll("*").remove();
 
-        const svg = d3.select(svgRef.current);
-        // Ensure the SVG dimensions are set on each draw
-        svg.attr("width", width)
-            .attr("height", height);
+    // Process data
+    const processedData = data.map(d => ({
+      label: d.Continent || d.Region || 'Unknown',
+      value: parseValue(d.TotalCases || d.Cases || 0),
+      deaths: parseValue(d.TotalDeaths || d.Deaths || 0),
+      recovered: parseValue(d.TotalRecovered || d.Recovered || 0)
+    }));
 
-        // Clear previous group to prevent accumulation on redraws
-        svg.select("g").remove();
+    // Filter out zero values and group by continent
+    const grouped = d3.rollups(
+      processedData.filter(d => d.value > 0),
+      v => ({
+        cases: d3.sum(v, d => d.value),
+        deaths: d3.sum(v, d => d.deaths),
+        recovered: d3.sum(v, d => d.recovered)
+      }),
+      d => d.label
+    ).map(([label, values]) => ({ label, ...values }));
 
-        const g = svg
-            .append("g")
-            .attr("transform", `translate(${width / 2}, ${height / 2 + 10})`);
+    if (grouped.length === 0) return;
 
-        const tooltip = d3
-            .select(tooltipRef.current)
-            .attr("class", "absolute p-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg pointer-events-none transition-opacity duration-200")
-            .style("opacity", 0); // Start hidden, fade in
+    // Auto-fit dimensions
+    const size = isModal ? 
+      Math.min(800, 700) : 
+      Math.min(containerRef.current?.clientWidth || 400, 400);
+    
+    const radius = Math.min(size, isModal ? 700 : 400) / 2 - 60;
+    const width = size;
+    const height = size;
 
-        const groupedData = d3
-            .rollups(
-                data,
-                (v) => d3.sum(v, (d) => +d[metric]),
-                (d) => d.Continent
-            )
-            .filter(
-                ([continent]) =>
-                    continent &&
-                    continent !== "" &&
-                    continent !== "Oceania" &&
-                    continent !== "Australia/Oceania"
-            );
+    // Set SVG dimensions
+    svg
+      .attr("width", width)
+      .attr("height", height)
+      .attr("viewBox", `0 0 ${width} ${height}`)
+      .attr("preserveAspectRatio", "xMidYMid meet")
+      .style("width", "100%")
+      .style("height", "100%")
+      .style("max-width", "100%")
+      .style("max-height", "100%");
 
-        const pie = d3.pie().value((d) => d[1]).sort(null);
-        const arc = d3
-            .arc()
+    const g = svg.append("g")
+      .attr("transform", `translate(${width / 2}, ${height / 2})`);
+
+    // Color scale
+    const colorScale = d3.scaleOrdinal()
+      .domain(grouped.map(d => d.label))
+      .range(d3.schemeSet3);
+
+    // Create pie layout
+    const pie = d3.pie()
+      .value(d => d.cases)
+      .sort(null);
+
+    const arc = d3.arc()
+      .innerRadius(0)
+      .outerRadius(radius);
+
+    const outerArc = d3.arc()
+      .innerRadius(radius * 1.1)
+      .outerRadius(radius * 1.1);
+
+    // Create tooltip
+    const tooltip = d3.select("body")
+      .selectAll(".pie-chart-tooltip")
+      .data([null])
+      .join("div")
+      .attr("class", "pie-chart-tooltip")
+      .style("position", "absolute")
+      .style("background", "rgba(15, 23, 42, 0.95)")
+      .style("color", "white")
+      .style("padding", "12px 16px")
+      .style("border-radius", "8px")
+      .style("font-size", "13px")
+      .style("pointer-events", "none")
+      .style("opacity", 0)
+      .style("box-shadow", "0 10px 25px rgba(0, 0, 0, 0.3)")
+      .style("backdrop-filter", "blur(10px)")
+      .style("border", "1px solid rgba(255, 255, 255, 0.1)")
+      .style("z-index", "9999")
+      .style("transition", "opacity 0.2s ease");
+
+    // Create arcs
+    const arcs = g.selectAll(".arc")
+      .data(pie(grouped))
+      .enter()
+      .append("g")
+      .attr("class", "arc");
+
+    arcs.append("path")
+      .attr("d", arc)
+      .attr("fill", d => colorScale(d.data.label))
+      .attr("stroke", "white")
+      .attr("stroke-width", 2)
+      .style("cursor", "pointer")
+      .on("mouseover", function(event, d) {
+        // Enhance the slice
+        d3.select(this)
+          .transition()
+          .duration(200)
+          .attr("d", d3.arc()
             .innerRadius(0)
-            .outerRadius(radius - 10);
-        const labelArc = d3
-            .arc()
-            .innerRadius(radius * 0.65)
-            .outerRadius(radius * 0.65);
+            .outerRadius(radius + 10)
+          );
 
-        const arcs = g
-            .selectAll("g.arc")
-            .data(pie(groupedData))
-            .enter()
-            .append("g")
-            .attr("class", "arc");
+        // Calculate percentages and insights
+        const total = d3.sum(grouped, d => d.cases);
+        const percentage = ((d.data.cases / total) * 100).toFixed(1);
+        const fatalityRate = ((d.data.deaths / d.data.cases) * 100).toFixed(2);
+        const recoveryRate = ((d.data.recovered / d.data.cases) * 100).toFixed(2);
 
-        arcs
-            .append("path")
-            .attr("d", arc)
-            .attr("fill", (d) => pieColors(d.data[0]))
-            .on("mouseover", (event, d) => {
-                const total = d3.sum(groupedData, (x) => x[1]);
-                const percent = ((d.data[1] / total) * 100).toFixed(2);
-                tooltip
-                    .html(
-                        `<strong>${d.data[0]}</strong><br/>
-           ${metric.replace("Total", "")}: ${d.data[1].toLocaleString()}<br/>
-           (${percent}%)`
-                    )
-                    .style("opacity", 1);
-                d3.select(event.currentTarget).attr("opacity", 0.7);
-            })
-            .on("mousemove", (event) => {
-                tooltip
-                    .style("left", (event.pageX + 10) + "px")
-                    .style("top", (event.pageY - 20) + "px");
-            })
-            .on("mouseout", (event) => {
-                tooltip.style("opacity", 0);
-                d3.select(event.currentTarget).attr("opacity", 1);
-            });
+        // Enhanced tooltip content
+        const tooltipContent = `
+          <div style="font-weight: bold; font-size: 14px; margin-bottom: 8px; color: #60A5FA;">
+            ${d.data.label}
+          </div>
+          <div style="margin-bottom: 6px;">
+            <span style="color: ${colorScale(d.data.label)}; font-size: 16px;">●</span> 
+            <span style="font-weight: 600;">Cases:</span> 
+            <span style="color: #F1F5F9; font-weight: bold;">${d.data.cases.toLocaleString()}</span>
+          </div>
+          <div style="font-size: 12px; color: #CBD5E1; margin-bottom: 4px;">
+            ${percentage}% of global cases
+          </div>
+          <div style="font-size: 11px; color: #94A3B8; margin-bottom: 2px;">
+            Deaths: ${d.data.deaths.toLocaleString()} (${fatalityRate}%)
+          </div>
+          <div style="font-size: 11px; color: #94A3B8;">
+            Recovered: ${d.data.recovered.toLocaleString()} (${recoveryRate}%)
+          </div>
+        `;
 
-        arcs
-            .append("text")
-            .attr("transform", (d) => `translate(${labelArc.centroid(d)})`)
-            .attr("text-anchor", "middle")
-            .style("font-size", "12px")
-            .style("fill", "var(--text-light)") // THIS LINE WAS THE ISSUE
-            .text((d) => d.data[0]); // This line should follow immediately without a semicolon
+        tooltip
+          .html(tooltipContent)
+          .style("opacity", 1)
+          .style("left", (event.pageX + 15) + "px")
+          .style("top", (event.pageY - 10) + "px");
+      })
+      .on("mousemove", function(event) {
+        tooltip
+          .style("left", (event.pageX + 15) + "px")
+          .style("top", (event.pageY - 10) + "px");
+      })
+      .on("mouseout", function(event, d) {
+        d3.select(this)
+          .transition()
+          .duration(200)
+          .attr("d", arc);
 
-        // Chart Title
-        svg
-            .append("text")
-            .attr("x", width / 2)
-            .attr("y", 15)
-            .attr("text-anchor", "middle")
-            .style("font-size", "1.125rem")
-            .style("font-weight", "bold")
-            .style("fill", "var(--text-dark)")
-            .text(`${metric.replace("Total", "")} by Continent`);
-    };
+        tooltip.style("opacity", 0);
+      });
 
-    useEffect(() => {
-        drawChart();
+    // Add labels
+    const text = g.selectAll(".label")
+      .data(pie(grouped))
+      .enter()
+      .append("text")
+      .attr("class", "label")
+      .attr("transform", d => `translate(${outerArc.centroid(d)})`)
+      .style("text-anchor", d => {
+        const midAngle = d.startAngle + (d.endAngle - d.startAngle) / 2;
+        return midAngle < Math.PI ? 'start' : 'end';
+      })
+      .style("font-size", isModal ? "12px" : "10px")
+      .style("fill", "#374151")
+      .style("font-weight", "500")
+      .text(d => {
+        const total = d3.sum(grouped, d => d.cases);
+        const percentage = ((d.data.cases / total) * 100).toFixed(1);
+        return `${d.data.label} (${percentage}%)`;
+      });
 
-        const resizeObserver = new ResizeObserver(() => {
-            d3.select(svgRef.current).selectAll("*").remove();
-            drawChart();
-        });
-        if (containerRef.current) {
-            resizeObserver.observe(containerRef.current);
-        }
+    // Add connecting lines
+    const polyline = g.selectAll(".polyline")
+      .data(pie(grouped))
+      .enter()
+      .append("polyline")
+      .attr("class", "polyline")
+      .attr("stroke", "#6B7280")
+      .attr("stroke-width", 1)
+      .attr("fill", "none")
+      .attr("points", d => {
+        const pos = outerArc.centroid(d);
+        const midAngle = d.startAngle + (d.endAngle - d.startAngle) / 2;
+        pos[0] = radius * 0.95 * (midAngle < Math.PI ? 1 : -1);
+        return [arc.centroid(d), outerArc.centroid(d), pos];
+      });
 
-        return () => {
-            d3.select(svgRef.current).selectAll("*").remove();
-            if (containerRef.current) {
-                resizeObserver.unobserve(containerRef.current);
-            }
-        };
-    }, [data, metric]);
+    // Chart title
+    svg.append("text")
+      .attr("x", width / 2)
+      .attr("y", 25)
+      .attr("text-anchor", "middle")
+      .style("font-size", isModal ? "18px" : "16px")
+      .style("font-weight", "bold")
+      .style("fill", "#1F2937")
+      .text("COVID-19 Cases Distribution");
 
-    return (
-        <div ref={containerRef} className="w-full flex flex-col items-center justify-center min-h-[400px]">
-            <div className="mb-8 flex items-center gap-2 text-gray-800 dark:text-gray-200">
-                <label htmlFor="metric-select" className="font-medium ">Select Metric:</label>
-                <select
-                    id="metric-select"
-                    value={metric}
-                    onChange={(e) => setMetric(e.target.value)}
-                    className="p-2 border border-blue-400 dark:border-blue-600 rounded-md bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-blue-500 focus:border-blue-500 outline-none cursor-pointer"
-                >
-                    <option value="TotalCases">Total Cases</option>
-                    <option value="TotalDeaths">Total Deaths</option>
-                    <option value="TotalRecovered">Total Recovered</option>
-                    <option value="Population">Population</option>
-                </select>
-            </div>
-            <svg ref={svgRef}></svg>
-            <div ref={tooltipRef} className="z-50"></div>
-        </div>
-    );
+  }, [data, isModal]);
+
+  return (
+    <div 
+      ref={containerRef} 
+      className={`w-full ${isModal ? 'h-full' : 'h-96'} ${isModal ? '' : 'flex items-center justify-center'} overflow-hidden`}
+      style={{ 
+        minHeight: isModal ? '600px' : '400px',
+        maxHeight: isModal ? 'none' : '400px'
+      }}
+    >
+      <svg 
+        ref={svgRef} 
+        className="w-full h-[600px]"
+        style={{ 
+          display: 'block',
+          minHeight: isModal ? '600px' : '400px'
+        }}
+      />
+    </div>
+  );
 };
 
-export default ContinentPieChart;
+export default PieChart;

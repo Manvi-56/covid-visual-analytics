@@ -54,12 +54,6 @@ function App() {
           loadAndCleanCSV2("/data/worldometer_data.csv"),
           loadAndCleanIndiaCovid("/data/state_data.csv"),
         ]);
-        console.log("App.js - Professional data loaded:", parsedData?.length, "items");
-        console.log("App.js - Global data loaded:", parsedData2?.length, "items");
-        console.log("App.js - India data loaded:", parsedData3?.length, "items");
-        if (parsedData?.length > 0) {
-          console.log("App.js - Sample professional data:", parsedData[0]);
-        }
         setData(parsedData);
         setData2(parsedData2);
         setData3(parsedData3);
@@ -121,16 +115,9 @@ function App() {
   const getGlobalStats = () => {
     if (!data2 || data2.length === 0) return [];
     
-    const parseValue = (value) => {
-      if (typeof value === 'string') {
-        return parseInt(value.replace(/,/g, '') || 0);
-      }
-      return parseInt(value || 0);
-    };
-    
-    const totalCases = data2.reduce((sum, item) => sum + parseValue(item.TotalCases), 0);
-    const totalDeaths = data2.reduce((sum, item) => sum + parseValue(item.TotalDeaths), 0);
-    const totalRecovered = data2.reduce((sum, item) => sum + parseValue(item.TotalRecovered), 0);
+    const totalCases = data2.reduce((sum, item) => sum + (parseInt(item.TotalCases?.replace(/,/g, '') || 0)), 0);
+    const totalDeaths = data2.reduce((sum, item) => sum + (parseInt(item.TotalDeaths?.replace(/,/g, '') || 0)), 0);
+    const totalRecovered = data2.reduce((sum, item) => sum + (parseInt(item.TotalRecovered?.replace(/,/g, '') || 0)), 0);
     
     return [
       { label: "Global Cases", value: totalCases.toLocaleString(), change: "+2.3%" },

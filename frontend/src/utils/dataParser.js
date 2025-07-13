@@ -17,15 +17,32 @@ export async function loadAndCleanCSV(path) {
       header: true,
       dynamicTyping: true,
       complete: (results) => {
+        console.log("DataParser - Raw CSV results:", results);
+        console.log("DataParser - Total rows parsed:", results.data.length);
+        
         const cleaned = results.data.map(row => ({
           ...row,
           Hours_Worked_Per_Day: cleanNumberField(row.Hours_Worked_Per_Day),
           Meetings_Per_Day: cleanNumberField(row.Meetings_Per_Day),
           Productivity_Change: +row.Productivity_Change,
         }));
-        resolve(cleaned.filter(row => !isNaN(row.Hours_Worked_Per_Day)));
+        
+        // Filter out completely empty rows instead of just checking Hours_Worked_Per_Day
+        const filtered = cleaned.filter(row => {
+          return row.Stress_Level && row.Sector; // Check for key fields that should always exist
+        });
+        
+        console.log("DataParser - Cleaned and filtered rows:", filtered.length);
+        if (filtered.length > 0) {
+          console.log("DataParser - Sample cleaned data:", filtered[0]);
+        }
+        
+        resolve(filtered);
       },
-      error: (error) => reject(error),
+      error: (error) => {
+        console.error("DataParser - Error loading CSV:", error);
+        reject(error);
+      },
     });
   });
 }

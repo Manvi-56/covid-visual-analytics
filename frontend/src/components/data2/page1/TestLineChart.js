@@ -2,7 +2,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import * as d3 from "d3";
 
-const TestsPerMillionLineChart = ({ data }) => {
+const TestsPerMillionLineChart = ({ data, isModal = false }) => {
     const svgRef = useRef();
     const tooltipRef = useRef();
     const containerRef = useRef(); // New ref for the container div
@@ -13,11 +13,18 @@ const TestsPerMillionLineChart = ({ data }) => {
     const drawChart = () => {
         if (!data || data.length === 0 || !containerRef.current) return;
 
-        const containerWidth = containerRef.current.clientWidth;
+        const containerWidth = isModal 
+          ? Math.max(1000, window.innerWidth * 0.8)
+          : containerRef.current.clientWidth;
 
-        const margin = { top: 50, right: 30, bottom: 160, left: 70 };
+        const margin = { 
+          top: 50, 
+          right: isModal ? 40 : 30, 
+          bottom: isModal ? 180 : 160, 
+          left: isModal ? 80 : 70 
+        };
         // Make width responsive based on container width, with a min-width
-        const width = Math.max(containerWidth - margin.left - margin.right, 700);
+        const width = Math.max(containerWidth - margin.left - margin.right, isModal ? 800 : 700);
         const height = 500 - margin.top - margin.bottom;
 
         const svg = d3.select(svgRef.current);
@@ -167,7 +174,14 @@ const TestsPerMillionLineChart = ({ data }) => {
 
     return (
         // Add ref to the parent div and apply Tailwind classes
-        <div ref={containerRef} className="w-full flex flex-col items-center justify-center min-h-[600px] p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+        <div 
+          ref={containerRef} 
+          className={`w-full ${isModal ? 'h-full' : 'min-h-[600px]'} flex flex-col items-center justify-start p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md`}
+          style={{ 
+            minHeight: isModal ? '600px' : '600px',
+            maxHeight: isModal ? 'none' : 'none'
+          }}
+        >
             {/* Filter UI - applying Tailwind classes */}
             <div className="mb-4 flex items-center gap-2 text-gray-800 dark:text-gray-200">
                 <label htmlFor="continent-select" className="font-medium">Filter by Continent:</label>
@@ -183,7 +197,13 @@ const TestsPerMillionLineChart = ({ data }) => {
                     ))}
                 </select>
             </div>
-            <svg ref={svgRef} className="block"></svg> {/* block display for svg */}
+            <svg 
+              ref={svgRef} 
+              className="block w-full h-auto"
+              style={{ 
+                minHeight: isModal ? '500px' : '450px'
+              }}
+            />
             <div ref={tooltipRef} className="z-50"></div> {/* Ensure tooltip is on top */}
         </div>
     );

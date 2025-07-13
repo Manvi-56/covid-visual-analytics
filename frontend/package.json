@@ -3,18 +3,24 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@headlessui/react": "^2.1.0",
+    "@heroicons/react": "^2.0.18",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
-    "@testing-library/user-event": "^13.5.0",
+    "@testing-library/user-event": "^14.5.2",
+    "clsx": "^2.1.1",
     "d3": "^7.9.0",
+    "framer-motion": "^11.15.0",
+    "lucide-react": "^0.460.0",
     "papaparse": "^5.5.3",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0",
     "react-scripts": "5.0.1",
-    "recharts": "^3.0.2",
+    "recharts": "^2.13.3",
     "save-svg-as-png": "^1.4.17",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^4.2.4"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -41,6 +47,7 @@
     ]
   },
   "devDependencies": {
+    "@types/d3": "^7.4.3",
     "tailwindcss": "^3.4.17"
   }
 }
