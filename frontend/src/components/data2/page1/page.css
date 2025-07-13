@@ -5,12 +5,12 @@
 }
 .region-pie-chart{
     background-color: aliceblue;
-    width: 45%;
+    /*width: 45%;*/
     padding: 20px;
     border-right: 1px solid blue;
 }
 .filter-pie{
-    width: 45%;
+    /*width: 45%;*/
 }
 .filter-pie select{
     border: none;
@@ -24,7 +24,7 @@
     
 }
 .image-pie{
-    margin-left: 200px;
+    /*margin-left: 200px;*/
 }
 .page1-box{
     background-color:aliceblue;

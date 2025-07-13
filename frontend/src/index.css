@@ -1,10 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* src/index.css or similar global stylesheet */
+:root {
+  --primary-color: #3B82F6; /* Tailwind blue-500 */
+  --hover-color: #2563EB; /* Tailwind blue-600 or darker blue */
+  --text-dark: #1F2937; /* Tailwind gray-800 for light mode */
+  --text-light: #F9FAFB; /* Tailwind gray-50 for light text on dark backgrounds */
+  --border-color: #D1D5DB; /* Tailwind gray-300 for light mode */
+}
+
+/* Dark mode adjustments (if you have dark mode enabled via Tailwind) */
+.dark {
+  --primary-color: #60A5FA; /* Tailwind blue-400 for dark mode */
+  --hover-color: #3B82F6; /* Tailwind blue-500 for dark mode */
+  --text-dark: #F9FAFB; /* Tailwind gray-50 for dark mode */
+  --text-light: #1F2937; /* Tailwind gray-800 for dark text on light backgrounds */
+  --border-color: #4B5563; /* Tailwind gray-600 for dark mode */
+}
 body {
+
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  /* Using Tailwind's default colors/fonts or your custom ones if defined in tailwind.config.js */
+  @apply bg-bg-light text-text-dark dark:bg-bg-dark dark:text-text-light font-sans antialiased;
 }
 
 code {
