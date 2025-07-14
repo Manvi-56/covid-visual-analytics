@@ -9,6 +9,7 @@ import MortalityRecoveryScatter from "./components/Scatter";
 import IndiaCovidMap from "./components/data3/page1/india";
 import Page from "./components/data2/page1/Page";
 import Professinals from "./components/data/page1/professinals";
+import EmploymentAnalysis from "./components/data4/page1/EmploymentAnalysis";
 
 // Import UI components
 import Card from "./components/ui/Card";
@@ -115,6 +116,12 @@ function App() {
       icon: "📊", 
       description: "Meeting patterns and productivity analysis" 
     },
+    { 
+      id: "employment", 
+      label: "Employment Impact", 
+      icon: "🏢", 
+      description: "Global employment impact and working hours analysis" 
+    },
   ];
 
   // Calculate some basic stats for the header
@@ -163,6 +170,7 @@ function App() {
           {activeTab === "population" && <CasesVsPopulationScatter data={data2} />}
           {activeTab === "mortality" && <MortalityRecoveryScatter data={data2} />}
           {activeTab === "productivity" && <MeetingsProductivityChart data={data} />}
+          {activeTab === "employment" && <EmploymentAnalysis />}
         </motion.div>
       </AnimatePresence>
     );
