@@ -244,10 +244,10 @@ function App() {
                     <Card.Description>{tabs.find(t => t.id === activeTab)?.description}</Card.Description>
                   </div>
                 </div>
-                <div className="text-right text-sm text-secondary-500 dark:text-secondary-400">
+                {/* <div className="text-right text-sm text-secondary-500 dark:text-secondary-400">
                   <div>Last updated</div>
                   <div className="font-semibold">{new Date().toLocaleDateString()}</div>
-                </div>
+                </div> */}
               </div>
             </Card.Header>
             <Card.Content>

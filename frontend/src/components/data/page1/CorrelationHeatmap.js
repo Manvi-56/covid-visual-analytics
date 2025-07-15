@@ -3,12 +3,21 @@ import * as d3 from "d3";
 
 const HoursStressHeatmap = ({ data }) => {
   const svgRef = useRef();
-  const tooltipRef = useRef();
   const [insightText, setInsightText] = useState("");
 
   useEffect(() => {
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
+
+    // Function to clean malformed numbers - SIMPLIFIED for cleaned data
+    const cleanNumber = (value) => {
+      if (typeof value === 'number') return value;
+      if (typeof value === 'string') {
+        const parsed = parseFloat(value);
+        return isNaN(parsed) ? 0 : parsed;
+      }
+      return 0;
+    };
 
     // Get the container dimensions
     const containerWidth = svgRef.current.clientWidth || 600;
@@ -21,7 +30,7 @@ const HoursStressHeatmap = ({ data }) => {
     const hoursBins = d3
       .bin()
       .thresholds([4, 6, 8, 10, 12])
-      .value((d) => +d.Hours_Worked_Per_Day)(data);
+      .value((d) => cleanNumber(d.Hours_Worked_Per_Day))(data);
 
     const stressLevels = ["Low", "Medium", "High"];
 
@@ -59,17 +68,25 @@ const HoursStressHeatmap = ({ data }) => {
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    // Tooltip
-    const tooltip = d3
-      .select(tooltipRef.current)
+    // Create tooltip with PieChart style
+    const tooltip = d3.select("body")
+      .selectAll(".heatmap-tooltip")
+      .data([null])
+      .join("div")
+      .attr("class", "heatmap-tooltip")
       .style("position", "absolute")
-      .style("background", "#fff")
-      .style("padding", "8px 12px")
-      .style("border", "1px solid #ccc")
-      .style("border-radius", "4px")
+      .style("background", "rgba(15, 23, 42, 0.95)")
+      .style("color", "white")
+      .style("padding", "12px 16px")
+      .style("border-radius", "8px")
+      .style("font-size", "13px")
       .style("pointer-events", "none")
-      .style("box-shadow", "0 2px 5px rgba(0,0,0,0.2)")
-      .style("display", "none");
+      .style("opacity", 0)
+      .style("box-shadow", "0 10px 25px rgba(0, 0, 0, 0.3)")
+      .style("backdrop-filter", "blur(10px)")
+      .style("border", "1px solid rgba(255, 255, 255, 0.1)")
+      .style("z-index", "9999")
+      .style("transition", "opacity 0.2s ease");
 
     // X axis
     g.append("g")
@@ -89,22 +106,61 @@ const HoursStressHeatmap = ({ data }) => {
       .attr("width", x.bandwidth())
       .attr("height", y.bandwidth())
       .attr("fill", (d) => (d.count > 0 ? color(d.count) : "#f0f0f0"))
+      .attr("stroke", "white")
+      .attr("stroke-width", 1)
+      .style("cursor", "pointer")
       .on("mouseover", function (event, d) {
+        // Enhance the cell
+        d3.select(this)
+          .transition()
+          .duration(200)
+          .attr("opacity", 0.8)
+          .attr("stroke", "white")
+          .attr("stroke-width", 2);
+
+        const totalInBin = heatmapData
+          .filter(item => item.hoursBin === d.hoursBin)
+          .reduce((sum, item) => sum + item.count, 0);
+        const percentage = totalInBin > 0 ? ((d.count / totalInBin) * 100).toFixed(1) : "0.0";
+
+        // Enhanced tooltip content
+        const tooltipContent = `
+          <div style="font-weight: bold; font-size: 14px; margin-bottom: 8px; color: #60A5FA;">
+            ${d.hoursBin} Hours - ${d.stress} Stress
+          </div>
+          <div style="margin-bottom: 6px;">
+            <span style="color: ${d.count > 0 ? color(d.count) : "#94A3B8"}; font-size: 16px;">●</span> 
+            <span style="font-weight: 600;">Count:</span> 
+            <span style="color: #F1F5F9; font-weight: bold;">${d.count.toLocaleString()}</span>
+          </div>
+          <div style="font-size: 12px; color: #CBD5E1; margin-bottom: 4px;">
+            ${percentage}% of employees in this work hour range
+          </div>
+          <div style="font-size: 11px; color: #94A3B8;">
+            Correlation between working hours and stress levels
+          </div>
+        `;
+
         tooltip
-          .style("display", "block")
-          .html(
-            `<strong>Hours:</strong> ${d.hoursBin}<br/><strong>Stress:</strong> ${d.stress}<br/><strong>Count:</strong> ${d.count}`
-          );
-        d3.select(this).attr("opacity", 0.8);
+          .html(tooltipContent)
+          .style("opacity", 1)
+          .style("left", (event.pageX + 15) + "px")
+          .style("top", (event.pageY - 10) + "px");
       })
-      .on("mousemove", (event) => {
+      .on("mousemove", function (event) {
         tooltip
-          .style("left", event.pageX + 10 + "px")
-          .style("top", event.pageY + 10 + "px");
+          .style("left", (event.pageX + 15) + "px")
+          .style("top", (event.pageY - 10) + "px");
       })
       .on("mouseout", function () {
-        tooltip.style("display", "none");
-        d3.select(this).attr("opacity", 1);
+        d3.select(this)
+          .transition()
+          .duration(200)
+          .attr("opacity", 1)
+          .attr("stroke", "white")
+          .attr("stroke-width", 1);
+
+        tooltip.style("opacity", 0);
       });
 
     // Text inside cells
@@ -149,7 +205,6 @@ const HoursStressHeatmap = ({ data }) => {
   return (
     <div className="w-full h-full relative">
       <svg ref={svgRef} className="w-full h-full"></svg>
-      <div ref={tooltipRef}></div>
       {/* <div style={{ marginTop: "15px", fontStyle: "italic", fontSize: "14px" }}>{insightText}</div> */}
     </div>
   );

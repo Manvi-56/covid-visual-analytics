@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import StressPieChart from "./StressPieChart";
 import SectorBarChart from "./SectorBarChart";
 import HoursStressHeatmap from "./CorrelationHeatmap";
-import SectorHoursBarChart from "./BoxPlot";
+import SectorHoursBarChart from "./BoxPlotFixed";
 import Card from "../../ui/Card";
 import StatCard from "../../ui/StatCard";
 import "./pro.css";
