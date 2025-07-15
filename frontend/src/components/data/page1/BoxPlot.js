@@ -8,9 +8,13 @@ const SectorHoursBarChart = ({ data }) => {
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
+    // Get the container dimensions
+    const containerWidth = svgRef.current.clientWidth || 500;
+    const containerHeight = svgRef.current.clientHeight || 400;
+    
     const margin = { top: 50, right: 30, bottom: 60, left: 60 };
-    const width = 500 - margin.left - margin.right;
-    const height = 400 - margin.top - margin.bottom;
+    const width = Math.max(containerWidth - margin.left - margin.right, 300);
+    const height = Math.max(containerHeight - margin.top - margin.bottom, 200);
 
     const groupedData = d3.rollups(
       data,
@@ -90,7 +94,11 @@ const SectorHoursBarChart = ({ data }) => {
       .text("Hours Worked Per Day");
   }, [data]);
 
-  return <svg ref={svgRef}></svg>;
+  return (
+    <div className="w-full h-full relative">
+      <svg ref={svgRef} className="w-full h-full"></svg>
+    </div>
+  );
 };
 
 export default SectorHoursBarChart;

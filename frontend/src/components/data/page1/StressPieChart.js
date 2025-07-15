@@ -9,9 +9,13 @@ const StressPieChart = ({ data }) => {
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
-    const width = 300;
-    const height = 300;
-    const radius = Math.min(width, height) / 2;
+    // Get the container dimensions
+    const containerWidth = svgRef.current.clientWidth || 300;
+    const containerHeight = svgRef.current.clientHeight || 300;
+    
+    const width = Math.min(containerWidth, 300);
+    const height = Math.min(containerHeight, 300);
+    const radius = Math.min(width, height) / 2 - 20; // Add some padding
 
     const stressCounts = d3.rollup(
       data,
@@ -80,10 +84,10 @@ const StressPieChart = ({ data }) => {
   }, [data]);
 
   return (
-    <>
-      <svg ref={svgRef}></svg>
+    <div className="w-full h-full relative">
+      <svg ref={svgRef} className="w-full h-full"></svg>
       <div ref={tooltipRef}></div>
-    </>
+    </div>
   );
 };
 

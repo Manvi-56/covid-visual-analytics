@@ -362,11 +362,9 @@ import * as d3 from "d3";
 import "./india.css";
 
 function IndiaCovidMap({ data }) {
-  const [selectedState, setSelectedState] = useState(null);
   const [geoData, setGeoData] = useState(null);
   const [metric, setMetric] = useState("Confirmed");
   const svgRef = useRef();
-  const tooltipRef = useRef();
 
   // Debug logging
   useEffect(() => {
@@ -443,13 +441,18 @@ function IndiaCovidMap({ data }) {
     });
 
     // Create tooltip
-    const tooltip = d3.select(tooltipRef.current)
+    const tooltip = d3.select("body")
+      .append("div")
+      .attr("class", "d3-tooltip")
       .style("position", "absolute")
-      .style("background", "rgba(0, 0, 0, 0.8)")
+      .style("background", "rgba(0, 0, 0, 0.9)")
       .style("color", "white")
-      .style("padding", "8px 12px")
-      .style("border-radius", "4px")
-      .style("font-size", "12px")
+      .style("padding", "12px 16px")
+      .style("border-radius", "8px")
+      .style("font-size", "14px")
+      .style("line-height", "1.4")
+      .style("box-shadow", "0 4px 12px rgba(0, 0, 0, 0.3)")
+      .style("border", "1px solid rgba(255, 255, 255, 0.1)")
       .style("pointer-events", "none")
       .style("opacity", 0)
       .style("z-index", 1000);
@@ -495,60 +498,120 @@ function IndiaCovidMap({ data }) {
           stateData = stateDataMap.get(altName);
         }
         
+        // Enhanced hover effect with black border and scale transform
         d3.select(this)
-          .attr("stroke", "#333")
-          .attr("stroke-width", 2);
+          .transition()
+          .duration(200)
+          .attr("stroke", "#000000")
+          .attr("stroke-width", 2)
+          .attr("filter", "drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1))")
+          .style("transform", "scale(1.02)")
+          .style("transform-origin", "center");
+
+        // Stop any existing tooltip transitions
+        tooltip.transition().duration(0);
 
         if (stateData) {
+          const currentValue = parseNumber(stateData[metric]);
+          const totalValue = data.reduce((sum, state) => sum + parseNumber(state[metric]), 0);
+          const percentage = totalValue > 0 ? ((currentValue / totalValue) * 100).toFixed(1) : 0;
+          
+          // Get metric display name and color
+          const metricInfo = {
+            'Confirmed': { name: 'Total Cases', color: '#3b82f6', icon: '📊' },
+            'Active': { name: 'Active Cases', color: '#ef4444', icon: '🔄' },
+            'Deaths': { name: 'Deaths', color: '#6b7280', icon: '💔' },
+            'Recovered': { name: 'Recovered', color: '#10b981', icon: '✅' },
+            'CaseFatalityRate': { name: 'Case Fatality Rate', color: '#f59e0b', icon: '📈' }
+          };
+          
+          const info = metricInfo[metric] || { name: metric, color: '#6b7280', icon: '📊' };
+          
           tooltip
             .html(`
-              <div><strong>${stateName}</strong></div>
-              <div>Cases: ${parseNumber(stateData.Confirmed).toLocaleString()}</div>
-              <div>Active: ${parseNumber(stateData.Active).toLocaleString()}</div>
-              <div>Deaths: ${parseNumber(stateData.Deaths).toLocaleString()}</div>
-              <div>Recovered: ${parseNumber(stateData.Recovered).toLocaleString()}</div>
-              <div>CFR: ${stateData.CaseFatalityRate?.toFixed(2)}%</div>
+              <div style="
+                background: rgba(0, 0, 0, 0.9);
+                color: white;
+                padding: 12px 16px;
+                border-radius: 8px;
+                font-size: 14px;
+                line-height: 1.4;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                min-width: 200px;
+              ">
+                <div style="font-weight: 600; margin-bottom: 8px; color: #ffffff;">
+                  ${stateName}
+                </div>
+                <div style="margin-bottom: 4px;">
+                  <span style="color: ${info.color};">●</span> ${info.name}: <strong>${metric === 'CaseFatalityRate' ? (currentValue || 0).toFixed(2) + '%' : currentValue.toLocaleString()}</strong>
+                </div>
+                <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.2); color: #d1d5db;">
+                  ${percentage}% of total ${info.name.toLowerCase()}
+                </div>
+              </div>
             `)
             .style("opacity", 1)
-            .style("left", (event.pageX + 10) + "px")
-            .style("top", (event.pageY - 10) + "px");
+            .style("left", (event.pageX + 20) + "px")
+            .style("top", (event.pageY - 60) + "px");
         } else {
           tooltip
-            .html(`<div><strong>${stateName}</strong></div><div>No data available</div>`)
+            .html(`
+              <div style="
+                background: rgba(0, 0, 0, 0.9);
+                color: white;
+                padding: 12px 16px;
+                border-radius: 8px;
+                font-size: 14px;
+                line-height: 1.4;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                min-width: 180px;
+              ">
+                <div style="font-weight: 600; margin-bottom: 8px; color: #ffffff;">
+                  ${stateName}
+                </div>
+                <div style="color: #9ca3af;">
+                  No data available
+                </div>
+              </div>
+            `)
             .style("opacity", 1)
-            .style("left", (event.pageX + 10) + "px")
-            .style("top", (event.pageY - 10) + "px");
+            .style("left", (event.pageX + 20) + "px")
+            .style("top", (event.pageY - 60) + "px");
         }
       })
       .on("mousemove", function(event) {
         tooltip
-          .style("left", (event.pageX + 10) + "px")
-          .style("top", (event.pageY - 10) + "px");
+          .style("left", (event.pageX + 20) + "px")
+          .style("top", (event.pageY - 60) + "px");
       })
       .on("mouseout", function() {
         d3.select(this)
+          .transition()
+          .duration(200)
           .attr("stroke", "#fff")
-          .attr("stroke-width", 1);
+          .attr("stroke-width", 1)
+          .attr("filter", null)
+          .style("transform", "scale(1)")
+          .style("transform-origin", "center");
         
-        tooltip.style("opacity", 0);
+        // Add a small delay before hiding tooltip to prevent flickering
+        tooltip
+          .transition()
+          .delay(50)
+          .duration(200)
+          .style("opacity", 0);
       })
       .on("click", function(event, d) {
-        const stateName = d.properties.NAME_1 || d.properties.name || d.properties.ST_NM;
-        let stateData = stateDataMap.get(stateName.toLowerCase());
-        
-        // Try alternative matching if first attempt fails
-        if (!stateData) {
-          const altName = stateName.toLowerCase()
-            .replace(/\s+/g, ' ')
-            .replace(/&/g, 'and')
-            .trim();
-          stateData = stateDataMap.get(altName);
-        }
-        
-        if (stateData) {
-          setSelectedState(stateData);
-        }
+        // Click functionality disabled - only hover tooltips
+        console.log("State clicked:", d.properties.NAME_1 || d.properties.name || d.properties.ST_NM);
       });
+
+    // Cleanup function
+    return () => {
+      d3.selectAll(".d3-tooltip").remove();
+    };
 
   }, [geoData, data, metric]);
 
@@ -587,20 +650,6 @@ function IndiaCovidMap({ data }) {
 
   return (
     <div className="space-y-8">
-      {/* Debug Info */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-          <h3 className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">Debug Info</h3>
-          <p className="text-sm text-yellow-700 dark:text-yellow-300">
-            Data loaded: {data ? `Yes (${data.length} states)` : 'No'}
-          </p>
-          {data && data.length > 0 && (
-            <p className="text-sm text-yellow-700 dark:text-yellow-300">
-              Sample state: {data[0].State} - Confirmed: {data[0].Confirmed}
-            </p>
-          )}
-        </div>
-      )}
 
       {/* India Overview Metrics */}
       <div>
@@ -685,8 +734,7 @@ function IndiaCovidMap({ data }) {
           <div className="p-6 w-full flex justify-center">
             {geoData ? (
               <div className="relative w-full">
-                <svg ref={svgRef} className="w-full h-auto"></svg>
-                <div ref={tooltipRef}></div>
+                <svg ref={svgRef} className="w-full"></svg>
               </div>
             ) : (
               <div className="aspect-square max-w-md mx-auto bg-slate-100 dark:bg-slate-700 rounded-xl flex items-center justify-center">
@@ -716,8 +764,7 @@ function IndiaCovidMap({ data }) {
               {topStates.map((state, index) => (
                 <div 
                   key={state.State_UT || state.State || index} 
-                  className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-700 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors cursor-pointer"
-                  onClick={() => setSelectedState(state)}
+                  className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-700 rounded-lg"
                 >
                   <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-sm font-bold text-orange-600 dark:text-orange-400">
                     {index + 1}
@@ -739,56 +786,6 @@ function IndiaCovidMap({ data }) {
           </div>
         </div>
       </div>
-
-      {/* Selected State Details */}
-      {selectedState && (
-        <div className="bg-gradient-to-br from-blue-50 to-slate-50 dark:from-blue-900/20 dark:to-slate-800 rounded-2xl shadow-lg border border-blue-200 dark:border-blue-800 overflow-hidden">
-          <div className="bg-blue-50 dark:bg-blue-900/20 px-6 py-4 border-b border-blue-200 dark:border-blue-700 flex items-center justify-between">
-            <h4 className="text-lg font-semibold text-blue-800 dark:text-blue-200 flex items-center gap-2">
-              <span>📍</span>
-              {selectedState.State_UT || selectedState.State} - Detailed Statistics
-            </h4>
-            <button 
-              onClick={() => setSelectedState(null)}
-              className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 transition-colors"
-            >
-              ✕
-            </button>
-          </div>
-          <div className="p-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-white/50 dark:bg-slate-800/50 rounded-xl border border-blue-200 dark:border-blue-700">
-                <div className="text-2xl mb-2">😷</div>
-                <div className="text-sm font-medium text-slate-600 dark:text-slate-400">Total Cases</div>
-                <div className="text-lg font-bold text-orange-600">
-                  {parseNumber(selectedState.Confirmed).toLocaleString()}
-                </div>
-              </div>
-              <div className="text-center p-4 bg-white/50 dark:bg-slate-800/50 rounded-xl border border-blue-200 dark:border-blue-700">
-                <div className="text-2xl mb-2">✅</div>
-                <div className="text-sm font-medium text-slate-600 dark:text-slate-400">Recovered</div>
-                <div className="text-lg font-bold text-green-600">
-                  {parseNumber(selectedState.Recovered).toLocaleString()}
-                </div>
-              </div>
-              <div className="text-center p-4 bg-white/50 dark:bg-slate-800/50 rounded-xl border border-blue-200 dark:border-blue-700">
-                <div className="text-2xl mb-2">💔</div>
-                <div className="text-sm font-medium text-slate-600 dark:text-slate-400">Deaths</div>
-                <div className="text-lg font-bold text-gray-600">
-                  {parseNumber(selectedState.Deaths).toLocaleString()}
-                </div>
-              </div>
-              <div className="text-center p-4 bg-white/50 dark:bg-slate-800/50 rounded-xl border border-blue-200 dark:border-blue-700">
-                <div className="text-2xl mb-2">🚨</div>
-                <div className="text-sm font-medium text-slate-600 dark:text-slate-400">Active</div>
-                <div className="text-lg font-bold text-red-600">
-                  {parseNumber(selectedState.Active).toLocaleString()}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Regional Insights */}
       <div className="bg-gradient-to-br from-green-50 to-slate-50 dark:from-green-900/20 dark:to-slate-800 rounded-2xl shadow-lg border border-green-200 dark:border-green-800 overflow-hidden">

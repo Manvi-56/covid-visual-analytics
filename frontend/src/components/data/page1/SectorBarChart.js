@@ -9,9 +9,13 @@ const SectorBarChart = ({ data }) => {
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
-    const margin = { top: 40, right: 150, bottom: 60, left: 60 };
-    const width = 800 - margin.left - margin.right;
-    const height = 450 - margin.top - margin.bottom;
+    // Get the container dimensions
+    const containerWidth = svgRef.current.clientWidth || 800;
+    const containerHeight = svgRef.current.clientHeight || 450;
+    
+    const margin = { top: 40, right: 100, bottom: 60, left: 60 };
+    const width = Math.max(containerWidth - margin.left - margin.right, 300);
+    const height = Math.max(containerHeight - margin.top - margin.bottom, 250);
 
     const stressLevels = ["Low", "Medium", "High"];
     const colorMap = {
@@ -154,10 +158,10 @@ const SectorBarChart = ({ data }) => {
   }, [data]);
 
   return (
-    <>
-      <svg ref={svgRef}></svg>
+    <div className="w-full h-full relative">
+      <svg ref={svgRef} className="w-full h-full"></svg>
       <div ref={tooltipRef}></div>
-    </>
+    </div>
   );
 };
 

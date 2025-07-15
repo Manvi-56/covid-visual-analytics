@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import StressPieChart from "./StressPieChart";
 import SectorBarChart from "./SectorBarChart";
@@ -9,6 +9,26 @@ import StatCard from "../../ui/StatCard";
 import "./pro.css";
 
 function Professinals({ data }) {
+  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
+
+  // Handle window resize for responsive charts
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+    };
+
+    // Set initial size
+    handleResize();
+
+    // Add event listener
+    window.addEventListener('resize', handleResize);
+
+    // Cleanup
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   // Debug logging
   console.log("Professional Impact - Data received:", data);
   console.log("Professional Impact - Data length:", data?.length);
@@ -87,10 +107,11 @@ function Professinals({ data }) {
 
   return (
     <motion.div 
-      className="space-y-8"
+      className="space-y-8 max-w-full overflow-hidden"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
+      key={windowSize.width} // Force re-render on window resize
     >
       {/* Professional Impact Metrics */}
       <motion.div variants={itemVariants}>
@@ -133,24 +154,11 @@ function Professinals({ data }) {
           />
         </div>
         
-        {/* Debug Information - Remove this later */}
-        <div className="mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg text-xs">
-          <p><strong>Debug Info:</strong></p>
-          <p>Total Professionals: {totalProfessionals}</p>
-          <p>Avg Stress Level: {avgStressLevel}</p>
-          <p>Avg Working Hours: {avgWorkingHours}</p>
-          <p>Unique Sectors: {uniqueSectors}</p>
-          {data && data.length > 0 && (
-            <div className="mt-2">
-              <p><strong>Sample Data Fields:</strong></p>
-              <p>{Object.keys(data[0]).join(', ')}</p>
-            </div>
-          )}
-        </div>
+        
       </motion.div>
 
       {/* Charts Grid - Top Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8">
         {/* Stress Level Distribution */}
         <motion.div variants={itemVariants}>
           <Card className="h-full">
@@ -163,8 +171,10 @@ function Professinals({ data }) {
                 Distribution of self-reported stress levels among working professionals during the pandemic
               </Card.Description>
             </Card.Header>
-            <Card.Content className="flex items-center justify-center p-8">
-              <StressPieChart data={data} />
+            <Card.Content className="flex items-center justify-center p-4 min-h-[400px]">
+              <div className="w-full max-w-[350px] h-[300px] flex items-center justify-center">
+                <StressPieChart data={data} />
+              </div>
             </Card.Content>
           </Card>
         </motion.div>
@@ -181,15 +191,17 @@ function Professinals({ data }) {
                 Comparative analysis of pandemic impact across different industry sectors
               </Card.Description>
             </Card.Header>
-            <Card.Content className="flex items-center justify-center p-8">
-              <SectorBarChart data={data} />
+            <Card.Content className="p-4 min-h-[400px]">
+              <div className="w-full h-[350px] overflow-hidden">
+                <SectorBarChart data={data} />
+              </div>
             </Card.Content>
           </Card>
         </motion.div>
       </div>
 
       {/* Charts Grid - Bottom Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8">
         {/* Working Hours vs Stress Correlation */}
         <motion.div variants={itemVariants}>
           <Card className="h-full">
@@ -202,8 +214,10 @@ function Professinals({ data }) {
                 Correlation analysis between working hours and stress levels across different parameters
               </Card.Description>
             </Card.Header>
-            <Card.Content className="flex items-center justify-center p-8">
-              <HoursStressHeatmap data={data} />
+            <Card.Content className="p-4 min-h-[400px]">
+              <div className="w-full h-[350px] overflow-hidden">
+                <HoursStressHeatmap data={data} />
+              </div>
             </Card.Content>
           </Card>
         </motion.div>
@@ -220,8 +234,10 @@ function Professinals({ data }) {
                 Box plot analysis showing working hours distribution and outliers by sector
               </Card.Description>
             </Card.Header>
-            <Card.Content className="flex items-center justify-center p-8">
-              <SectorHoursBarChart data={data} />
+            <Card.Content className="p-4 min-h-[400px]">
+              <div className="w-full h-[350px] overflow-hidden">
+                <SectorHoursBarChart data={data} />
+              </div>
             </Card.Content>
           </Card>
         </motion.div>
